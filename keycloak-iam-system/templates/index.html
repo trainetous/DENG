@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keycloak IAM System</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: white;
+            margin: 0;
+            padding: 40px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            background: #e8f5e8;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .button-group {
+            margin: 20px 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 8px 8px 8px 0;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .results-box {
+            margin-top: 30px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .results-header {
+            background: #343a40;
+            color: white;
+            padding: 15px 20px;
+            margin: 0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        #output {
+            background: white;
+            padding: 20px;
+            margin: 0;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            color: #2c3e50;
+        }
+        
+        .api-docs {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            margin: 10px 0;
+        }
+        
+        code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        
+        .keycloak-section {
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .simple-section {
+            border-left: 4px solid #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Keycloak IAM System</h1>
+        
+        <div class="status">
+            <strong>Status:</strong> 
+            {% if user %}
+                Logged in as {{ user.username }} ({{ user.method }})
+            {% else %}
+                Not logged in
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <h2>🌐 Web Authentication</h2>
+            {% if user %}
+                <a href="/dashboard" class="btn btn-primary">Dashboard</a>
+                <a href="/logout" class="btn btn-secondary">Logout</a>
+            {% else %}
+                <a href="/keycloak-login" class="btn btn-danger">🔑 Login with Keycloak</a>
+                <a href="/simple-login" class="btn btn-success">📝 Simple Login</a>
+            {% endif %}
+        </div>
+        
+        <div class="section keycloak-section">
+            <h2>🔴 Keycloak API Testing</h2>
+            <div class="api-docs">
+                <p><code>POST /api/keycloak-login</code> - Get Keycloak JWT token</p>
+                <p><code>GET /api/protected</code> - Protected endpoint (requires Keycloak token)</p>
+                <p><strong>Test Users:</strong> admin/adminpassword, testuser/testpassword</p>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="getKeycloakToken()">
+                    🔵 Get Keycloak Token
+                </button>
+                <button class="btn btn-danger" onclick="testKeycloakProtected()">
+                    🔴 Test Keycloak Protected API
+                </button>
+            </div>
+        </div>
+        
+        <div class="section simple-section">
+            <h2>🟢 Simple JWT API Testing</h2>
+            <div class="api-docs">
+                <p><code>GET /api/public</code> - Public endpoint (no authentication)</p>
+                <p><code>POST /api/login</code> - Get simple JWT token</p>
+                <p><code>GET /api/protected-simple</code> - Protected endpoint (requires simple JWT)</p>
+                <p><strong>Test User:</strong> admin/password</p>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-success" onclick="testPublic()">
+                    🟢 Test Public API
+                </button>
+                <button class="btn btn-primary" onclick="getSimpleToken()">
+                    🔵 Get Simple JWT Token
+                </button>
+                <button class="btn btn-warning" onclick="testSimpleProtected()">
+                    🟡 Test Simple Protected API
+                </button>
+                <button class="btn btn-secondary" onclick="clearResults()">
+                    ⚫ Clear Results
+                </button>
+            </div>
+        </div>
+        
+        <div class="results-box">
+            <h3 class="results-header">📋 Test Results</h3>
+            <pre id="output">🚀 Ready to test both Keycloak and Simple JWT APIs! Click any button above to start...</pre>
+        </div>
+    </div>
+
+    <script>
+        var keycloakToken = null;
+        var simpleToken = null;
+        
+        function log(message, type) {
+            var output = document.getElementById('output');
+            var timestamp = new Date().toLocaleTimeString();
+            var prefix = '📋';
+            
+            if (type === 'success') prefix = '✅';
+            else if (type === 'error') prefix = '❌';
+            else if (type === 'warning') prefix = '⚠️';
+            else if (type === 'keycloak') prefix = '🔴';
+            else if (type === 'simple') prefix = '🟢';
+            
+            if (output.textContent.includes('Ready to test')) {
+                output.textContent = '';
+            }
+            
+            output.textContent += '[' + timestamp + '] ' + prefix + ' ' + message + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearResults() {
+            var output = document.getElementById('output');
+            output.textContent = '🧹 Results cleared.\n\n🚀 Ready for new tests...';
+            keycloakToken = null;
+            simpleToken = null;
+            log('All tokens cleared from memory', 'info');
+        }
+        
+        // Public API Test
+        function testPublic() {
+            log('Testing public API endpoint...', 'simple');
+            
+            fetch('/api/public')
+                .then(function(response) {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                })
+                .then(function(data) {
+                    log('Public API Response:', 'success');
+                    log(JSON.stringify(data, null, 2), 'info');
+                })
+                .catch(function(error) {
+                    log('Public API Error: ' + error.message, 'error');
+                });
+        }
+        
+        // Keycloak Token Functions
+        function getKeycloakToken() {
+            log('Requesting Keycloak token...', 'keycloak');
+            log('Using credentials: admin/adminpassword', 'info');
+            
+            fetch('/api/keycloak-login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: 'admin',
+                    password: 'adminpassword'
+                })
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('HTTP ' + response.status);
+                }
+            })
+            .then(function(data) {
+                keycloakToken = data.access_token;
+                log('Keycloak token successfully received!', 'success');
+                log('User: ' + data.user.username + ' (' + data.user.email + ')', 'keycloak');
+                log('Token: ' + keycloakToken.substring(0, 30) + '...', 'info');
+                log('Expires: ' + data.expires_in + ' seconds', 'info');
+            })
+            .catch(function(error) {
+                log('Keycloak authentication failed: ' + error.message, 'error');
+            });
+        }
+        
+        function testKeycloakProtected() {
+            if (!keycloakToken) {
+                log('No Keycloak token available. Getting token first...', 'warning');
+                getKeycloakToken();
+                setTimeout(function() {
+                    if (keycloakToken) {
+                        testKeycloakProtected();
+                    } else {
+                        log('Could not obtain Keycloak token. Test aborted.', 'error');
+                    }
+                }, 2000);
+                return;
+            }
+            
+            log('Testing Keycloak protected API endpoint...', 'keycloak');
+            
+            fetch('/api/protected', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + keycloakToken,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('HTTP ' + response.status);
+                }
+            })
+            .then(function(data) {
+                log('Keycloak Protected API Response:', 'success');
+                log(JSON.stringify(data, null, 2), 'keycloak');
+            })
+            .catch(function(error) {
+                log('Keycloak Protected API Error: ' + error.message, 'error');
+                if (error.message.includes('401')) {
+                    log('Keycloak token may have expired. Clearing for next attempt.', 'warning');
+                    keycloakToken = null;
+                }
+            });
+        }
+        
+        // Simple JWT Token Functions
+        function getSimpleToken() {
+            log('Requesting simple JWT token...', 'simple');
+            log('Using credentials: admin/password', 'info');
+            
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: 'admin',
+                    password: 'password'
+                })
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('HTTP ' + response.status);
+                }
+            })
+            .then(function(data) {
+                simpleToken = data.token;
+                log('Simple JWT token successfully received!', 'success');
+                log('User: ' + data.user.username + ' (' + data.user.role + ')', 'simple');
+                log('Token: ' + simpleToken.substring(0, 30) + '...', 'info');
+                log('Expires: ' + data.expires_in, 'info');
+            })
+            .catch(function(error) {
+                log('Simple JWT authentication failed: ' + error.message, 'error');
+            });
+        }
+        
+        function testSimpleProtected() {
+            if (!simpleToken) {
+                log('No simple JWT token available. Getting token first...', 'warning');
+                getSimpleToken();
+                setTimeout(function() {
+                    if (simpleToken) {
+                        testSimpleProtected();
+                    } else {
+                        log('Could not obtain simple JWT token. Test aborted.', 'error');
+                    }
+                }, 1000);
+                return;
+            }
+            
+            log('Testing simple JWT protected API endpoint...', 'simple');
+            
+            fetch('/api/protected-simple', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + simpleToken,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('HTTP ' + response.status);
+                }
+            })
+            .then(function(data) {
+                log('Simple JWT Protected API Response:', 'success');
+                log(JSON.stringify(data, null, 2), 'simple');
+            })
+            .catch(function(error) {
+                log('Simple JWT Protected API Error: ' + error.message, 'error');
+                if (error.message.includes('401')) {
+                    log('Simple JWT token may have expired. Clearing for next attempt.', 'warning');
+                    simpleToken = null;
+                }
+            });
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Keycloak IAM System initialized and ready for testing!', 'success');
+            log('🔴 Red buttons = Keycloak authentication', 'keycloak');
+            log('🟢 Green buttons = Simple JWT authentication', 'simple');
+        });
+    </script>
+</body>
+</html>
