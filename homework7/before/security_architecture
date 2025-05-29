@@ -1,0 +1,16 @@
+// Security Architecture
+digraph {
+	rankdir=TB splines=ortho
+	node [fontname=Arial fontsize=12 shape=box style="rounded,filled"]
+	internet [label=Internet fillcolor=lightcoral]
+	api_gw [label="API Gateway/Reverse Proxy\n(SSL, WAF)" fillcolor=lightblue]
+	firewall [label="Firewall/Security Group\n(Filter Traffic)" fillcolor=lightblue]
+	orchestrator [label="Container Orchestration\n(Docker/Kubernetes)" fillcolor=lightgreen]
+	app [label="Application Container\n(Non-root, Env Vars)" fillcolor=lightgreen]
+	database [label="Database/Services\n(Protected Network)" fillcolor=mediumpurple]
+	internet -> api_gw
+	api_gw -> firewall
+	firewall -> orchestrator
+	orchestrator -> app
+	app -> database
+}

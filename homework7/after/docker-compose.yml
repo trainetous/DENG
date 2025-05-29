@@ -1,0 +1,64 @@
+networks:
+  backend:
+    driver: bridge
+    internal: true
+  frontend:
+    driver: bridge
+services:
+  db:
+    cpu_shares: 512
+    env_file:
+    - .env
+    environment:
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=postgres
+    - PGDATA=/var/lib/postgresql/data/pgdata
+    healthcheck:
+      interval: 30s
+      retries: 5
+      test:
+      - CMD-SHELL
+      - pg_isready -U postgres
+      timeout: 10s
+    image: postgres:13
+    mem_limit: 512m
+    networks:
+    - backend
+    pids_limit: 100
+    read_only: true
+    restart: on-failure:5
+    security_opt:
+    - no-new-privileges:true
+    tmpfs:
+    - /var/run/postgresql:size=100M
+    - /tmp:size=100M
+    volumes:
+    - postgres_data:/var/lib/postgresql/data
+  web:
+    build: .
+    command: flask run --host=0.0.0.0 --port=5000
+    cpu_shares: 512
+    depends_on:
+    - db
+    environment:
+    - FLASK_APP=app.py
+    - FLASK_ENV=development
+    image: mywebapp
+    mem_limit: 512m
+    networks:
+    - frontend
+    pids_limit: 100
+    ports:
+    - 127.0.0.1:15000:5000
+    read_only: true
+    restart: on-failure:5
+    security_opt:
+    - no-new-privileges:true
+    tmpfs:
+    - /tmp:size=100M
+    - /var/log:size=100M
+    - /var/run:size=100M
+    volumes:
+    - .:/app:ro
+volumes:
+  postgres_data: null
